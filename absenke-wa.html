@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presensi Kehadiran Smart – Face & GPS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- Reset Basis & Skema Warna --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        :root {
+            --body-bg: #f0f4f9;
+            --card-bg: #ffffff;
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --success: #16a34a;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --text-main: #334155;
+            --border: #cbd5e1;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--text-main);
+            padding: 20px 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- Container Utama --- */
+        .attendance-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .icon-logo {
+            font-size: 2.5rem;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .auth-header h2 {
+            font-size: 1.4rem;
+            color: var(--primary);
+        }
+
+        .auth-header p {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* --- Komponen Card Panel --- */
+        .panel-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .panel-title i {
+            color: var(--accent);
+        }
+
+        /* --- Input Form Tambahan --- */
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        .helper-text {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: -10px;
+            margin-bottom: 12px;
+        }
+
+        /* --- UI Pemindai Wajah (Face Recognition View) --- */
+        .camera-area {
+            width: 100%;
+            height: 240px;
+            background-color: #000;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .scan-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(37, 99, 235, 0.3);
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        .scan-line {
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #2563eb, transparent);
+            position: absolute;
+            animation: scanAnimation 2.5s linear infinite;
+            box-shadow: 0 0 8px #2563eb;
+        }
+
+        @keyframes scanAnimation {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        .camera-placeholder {
+            position: absolute;
+            color: #94a3b8;
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 20px;
+        }
+
+        .camera-placeholder i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .camera-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .status-indicator {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* --- UI Modul GPS Tracker --- */
+        .gps-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .gps-info {
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .coords {
+            font-family: monospace;
+            margin-top: 3px;
+        }
+
+        .location-badge {
+            margin-top: 10px;
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .location-badge.unverified { background: #f1f5f9; color: #475569; }
+        .location-badge.verified { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+        .location-badge.failed { background: #fee2e2; color: #ef4444; }
+
+        /* --- UI Upload File Zona --- */
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: border 0.2s;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone p {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-name {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--success);
+            font-weight: bold;
+            display: none;
+        }
+
+        /* --- Komponen Tombol (Buttons) --- */
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary { background: #e2e8f0; color: #334155; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-info { background: #eff6ff; color: var(--accent); border: 1px solid #bfdbfe; }
+        .btn-info:hover { background: #dbeafe; }
+
+        .btn-submit-absen {
+            width: 100%;
+            padding: 14px;
+            background: #25d366; /* Warna khas WhatsApp */
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+        }
+
+        .btn-submit-absen:hover {
+            background: #1ebc59;
+        }
+
+        /* Komponen Tambahan Utils */
+        .text-muted { color: #64748b; }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="attendance-container">
+        <!-- Header -->
+        <header class="auth-header">
+            <i class="fa-solid fa-building-user icon-logo"></i>
+            <h2>E-Presensi Kehadiran</h2>
+            <p>Verifikasi wajah dan lokasi Anda, lalu kirim ke WhatsApp Atasan/Orang Tua.</p>
+        </header>
+
+        <!-- Main Form -->
+        <form id="attendanceForm" onsubmit="prosesAbsen(event)">
+            
+            <!-- STEP 1: DATA DIRI & TUJUAN WA -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-user-pen"></i>
+                    <span>1. Data Diri & Tujuan WhatsApp</span>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="namaPengguna" placeholder="Masukkan Nama Lengkap Anda" required>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="nomorWA" placeholder="Nomor WA Tujuan (Mulai dengan +62)" required>
+                </div>
+                <p class="helper-text" style="margin-top: 0;">Contoh nomor WA: 085224430883</p>
+            </div>
+
+            <!-- STEP 2: FACE RECOGNITION PANEL -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-face-id-avatar"></i>
+                    <span>2. Verifikasi Pemindaian Wajah</span>
+                </div>
+                
+                <div class="camera-area">
+                    <video id="webcam" autoplay playsinline muted></video>
+                    <div class="scan-overlay">
+                        <div class="scan-line"></div>
+                    </div>
+                    <div id="camera-fallback" class="camera-placeholder hidden">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <p>Kamera tidak aktif atau izin ditolak.</p>
+                    </div>
+                </div>
+
+                <div class="camera-controls">
+                    <button type="button" class="btn btn-secondary" onclick="startCamera()">
+                        <i class="fa-solid fa-camera"></i> Aktifkan Kamera
+                    </button>
+                    <span class="status-indicator text-muted" id="face-status">
+                        <i class="fa-solid fa-circle-dot"></i> Belum dipindai
+                    </span>
+                </div>
+            </div>
+
+            <!-- STEP 3: GPS GEOLOCATION -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                    <span>3. Lokasi GPS Presensi</span>
+                </div>
+                
+                <div class="gps-box">
+                    <div class="gps-info">
+                        <p><strong>Koordinat Anda:</strong></p>
+                        <p id="location-coords" class="coords text-muted">Belum mengambil data...</p>
+                    </div>
+                    <button type="button" class="btn btn-info" onclick="getExactLocation()">
+                        <i class="fa-solid fa-map-pin"></i> Dapatkan Lokasi
+                    </button>
+                </div>
+                <div id="gps-status-badge" class="location-badge unverified">
+                    Status: Lokasi Belum Terverifikasi
+                </div>
+            </div>
+
+            <!-- STEP 4: UPLOAD FILE PENDUKUNG (OPSIONAL) -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-paperclip"></i>
+                    <span>4. Upload Dokumen <small>(Opsional)</small></span>
+                </div>
+                <p class="helper-text">Hanya jika Izin/Sakit</p>
+                
+                <div class="upload-zone">
+                    <i class="fa-solid fa-file-arrow-up upload-icon"></i>
+                    <p>Pilih berkas surat keterangan (Maks 2MB)</p>
+                    <input type="file" id="attachment" accept=".pdf, .jpg, .jpeg, .png" onchange="updateFileName()">
+                    <div id="file-name-display" class="file-name"></div>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="action-area">
+                <button type="submit" class="btn btn-submit-absen">
+                    <i class="fa-brands fa-whatsapp"></i> Kirim Presensi via WhatsApp
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Variabel global untuk menyimpan koordinat GPS
+        let savedLat = null;
+        let savedLon = null;
+        let cameraActive = false;
+
+        // 1. Fungsi Aktivasi Kamera / Face Area
+        async function startCamera() {
+            const video = document.getElementById('webcam');
+            const fallback = document.getElementById('camera-fallback');
+            const faceStatus = document.getElementById('face-status');
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300 } });
+                video.srcObject = stream;
+                fallback.classList.add('hidden');
+                faceStatus.innerHTML = '<i class="fa-solid fa-circle-check text-success"></i> Wajah Terverifikasi';
+                faceStatus.className = "status-indicator text-success";
+                cameraActive = true;
+            } catch (err) {
+                console.error("Gagal mengakses kamera: ", err);
+                fallback.classList.remove('hidden');
+                faceStatus.innerHTML = '<i class="fa-solid fa-circle-xmark text-danger"></i> Akses Gagal';
+                faceStatus.className = "status-indicator text-danger";
+                cameraActive = false;
+            }
+        }
+
+        // 2. Fungsi Ambil Lokasi GPS Akurat
+        function getExactLocation() {
+            const coordsText = document.getElementById('location-coords');
+            const badge = document.getElementById('gps-status-badge');
+            
+            if (!navigator.geolocation) {
+                coordsText.innerText = "Geolokasi tidak didukung.";
+                return;
+            }
+
+            coordsText.innerText = "Sedang mencari satelit GPS...";
+            
+            const options = {
+                enableHighAccuracy: true, 
+                timeout: 7000,
+                maximumAge: 0
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    savedLat = position.coords.latitude;
+                    savedLon = position.coords.longitude;
+                    const accuracy = position.coords.accuracy.toFixed(1);
+
+                    coordsText.innerHTML = `Lat: <strong>${savedLat}</strong> <br> Lon: <strong>${savedLon}</strong>`;
+                    
+                    badge.innerText = "Status: Lokasi Terkunci (Akurat)";
+                    badge.className = "location-badge verified";
+                }, 
+                (error) => {
+                    coordsText.innerText = "Gagal. Pastikan GPS aktif.";
+                    badge.innerText = "Status: Gagal Mengunci Lokasi";
+                    badge.className = "location-badge failed";
+                }, 
+                options
+            );
+        }
+
+        // 3. Fungsi Menampilkan Nama File Setelah Diunggah
+        function updateFileName() {
+            const input = document.getElementById('attachment');
+            const display = document.getElementById('file-name-display');
+            if(input.files.length > 0) {
+                display.innerText = "File terpilih: " + input.files[0].name;
+                display.style.display = "block";
+            }
+        }
+
+        // 4. Proses Submit Data Absen ke WhatsApp
+        function prosesAbsen(e) {
+            e.preventDefault();
+            
+            const nama = document.getElementById('namaPengguna').value;
+            let nomorWA = document.getElementById('nomorWA').value;
+            
+            // Format ulang nomor WA jika diawali dengan '0'
+            if (nomorWA.startsWith('0')) {
+                nomorWA = '62' + nomorWA.substring(1);
+            }
+
+            // Cek file lampiran
+            const inputFile = document.getElementById('attachment');
+            let statusLampiran = inputFile.files.length > 0 ? `Telah melampirkan file: ${inputFile.files[0].name}` : "Tidak ada lampiran";
+
+            // Status Wajah
+            let statusWajah = cameraActive ? "✅ Telah diverifikasi melalui sistem." : "❌ Tidak terverifikasi (Kamera tidak aktif).";
+
+            // Status Lokasi & Google Maps Link
+            let infoLokasi = "❌ Lokasi belum dikunci.";
+            let mapsLink = "";
+            if (savedLat !== null && savedLon !== null) {
+                infoLokasi = `✅ Terkunci pada titik koordinat:\nLatitude: ${savedLat}\nLongitude: ${savedLon}`;
+                mapsLink = `\n📍 Buka di Google Maps:\nhttps://www.google.com/maps?q=${savedLat},${savedLon}`;
+            }
+
+            // Waktu saat absen dikirim
+            const waktuSekarang = new Date().toLocaleString('id-ID');
+
+            // Susun Teks Pesan WhatsApp
+            const pesanKehadiran = `*LAPORAN PRESENSI KEHADIRAN* 🏢\n\n` +
+                                   `*Nama:* ${nama}\n` +
+                                   `*Waktu Presensi:* ${waktuSekarang}\n\n` +
+                                   `*📸 Status Pemindaian Wajah:* \n${statusWajah}\n\n` +
+                                   `*📌 Titik Lokasi Presensi:*\n${infoLokasi}${mapsLink}\n\n` +
+                                   `*📎 Keterangan Tambahan/Lampiran:* \n${statusLampiran}\n\n` +
+                                   `_Pesan ini dikirim secara otomatis melalui sistem Smart Presensi._`;
+
+            // Encode pesan menjadi format URL
+            const pesanEncoded = encodeURIComponent(pesanKehadiran);
+
+            // Buka link WhatsApp (Web atau App jika di HP)
+            const waLink = `https://api.whatsapp.com/send?phone=${nomorWA}&text=${pesanEncoded}`;
+            window.open(waLink, '_blank');
+        }
+    </script>
+</body>
+</html>
